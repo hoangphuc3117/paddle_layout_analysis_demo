@@ -3,3 +3,4 @@ pypdfium2
 paddlex==3.1.2
 paddlex[base]
 paddlex[ocr]
+opencv-python-headless
