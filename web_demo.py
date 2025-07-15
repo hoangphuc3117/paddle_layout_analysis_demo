@@ -41,13 +41,18 @@ if uploaded_file is not None:
         res.save_to_img(result_img_path)
         res.save_to_json(result_json_path)
 
+
     # Display in two columns
     col1, col2 = st.columns(2)
     with col1:
         st.image(tmp_img_path, caption="Uploaded Image", use_container_width=True)
     with col2:
         st.image(result_img_path, caption="Detected Layout", use_container_width=True)
-        st.download_button("Download JSON Result", open(result_json_path, "rb"), file_name="result.json")
+        # Display JSON result below the image
+        import json
+        with open(result_json_path, "r") as f:
+            json_data = json.load(f)
+        st.json(json_data, expanded=False)
 
     # Clean up temp file
     os.remove(tmp_img_path)
