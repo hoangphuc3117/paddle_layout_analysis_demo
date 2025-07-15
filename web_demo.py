@@ -52,6 +52,7 @@ if uploaded_file is not None:
         import json
         with open(result_json_path, "r") as f:
             json_data = json.load(f)
+        st.header("Detection Results (JSON)")    
         st.json(json_data, expanded=False)
 
     # Clean up temp file
