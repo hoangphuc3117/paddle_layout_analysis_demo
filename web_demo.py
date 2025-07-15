@@ -52,8 +52,8 @@ if uploaded_file is not None:
         import json
         with open(result_json_path, "r") as f:
             json_data = json.load(f)
-        st.header("Detection Results (JSON)")    
-        st.json(json_data, expanded=False)
+        st.subheader ("Detection Result (JSON)")    
+        st.json(json_data, expanded=True)
 
     # Clean up temp file
     os.remove(tmp_img_path)
