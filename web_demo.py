@@ -14,7 +14,7 @@ st.title("PP-DocLayout_plus-L Model Inference Demo")
 @st.cache_resource
 def load_model():
     model_name = "PP-DocLayout_plus-L"
-    model_dir = "/Users/hoangphuc/Documents/Luan_van/code_test/training_paddle_detection_result/best_model/inference"
+    model_dir = "model"
     model = create_model(model_name=model_name, model_dir=model_dir, device="cpu")
     return model
 
