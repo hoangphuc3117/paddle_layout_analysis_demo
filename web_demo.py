@@ -11,6 +11,8 @@ import shutil
 import glob
 import json
 import kagglehub
+import cv2
+import numpy as np
 
 st.title("PP-Structure V3 Demo")
 
@@ -72,16 +74,17 @@ if 'last_file' not in st.session_state:
 if uploaded_file is not None:
     if st.session_state.last_file != uploaded_file.name:
         st.session_state.last_file = uploaded_file.name
-        st.rerun()
+        # No need to rerun, can process directly
+        # st.rerun()
 
-    # Save uploaded file to a temp location
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
-        tmp_file.write(uploaded_file.read())
-        tmp_img_path = tmp_file.name
+    # Read image into memory
+    image_bytes = uploaded_file.getvalue()
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     # Run prediction with loading spinner
     with st.spinner('Processing... Please wait while we analyze your image.'):
-        output = model.predict(tmp_img_path, batch_size=1, layout_nms=True)
+        output = model.predict(img_np, batch_size=1, layout_nms=True)
 
     output_dir = "output"
     if os.path.exists(output_dir):
@@ -98,7 +101,7 @@ if uploaded_file is not None:
 
 
     st.subheader("Original Image")
-    st.image(tmp_img_path, caption="Uploaded Image", use_container_width=False)
+    st.image(uploaded_file, caption="Uploaded Image", use_container_width=False)
     
     st.subheader("Detection Results")
     
@@ -137,6 +140,3 @@ if uploaded_file is not None:
                 json_data = json.load(f)
             st.text(f"File: {filename}")
             st.json(json_data, expanded=False)
-
-    # Clean up temp file
-    os.remove(tmp_img_path)
