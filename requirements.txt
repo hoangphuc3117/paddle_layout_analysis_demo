@@ -10,3 +10,5 @@ setuptools
 psutil
 Pillow
 numpy
+urllib3
+requests
