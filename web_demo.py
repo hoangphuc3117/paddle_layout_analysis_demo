@@ -277,6 +277,7 @@ if st.session_state.results and st.session_state.temp_file_path:
       
     clear_streamlit_cache()
     cleanup_session_state()
+    cleanup_memory
     current_memory = get_memory_usage()
     st.metric("Current Memory Usage", f"{current_memory:.1f} MB")
     try:
