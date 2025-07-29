@@ -6,3 +6,4 @@ pypdfium2
 # paddlex[ocr]
 opencv-python-headless
 setuptools
+psutil
