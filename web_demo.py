@@ -145,75 +145,75 @@ def load_model():
     )
     return model
 
-# with st.sidebar:
-#     st.header("Memory Management")
+with st.sidebar:
+    st.header("Memory Management")
     
-#     # Display current memory usage
-#     current_memory = get_memory_usage()
-#     st.metric("Current Memory Usage", f"{current_memory:.1f} MB")
+    # Display current memory usage
+    current_memory = get_memory_usage()
+    st.metric("Current Memory Usage", f"{current_memory:.1f} MB")
     
-    # # Display session memory stats if available
-    # if st.session_state.memory_stats:
-    #     st.subheader("Processing Stats")
-    #     if 'memory_before' in st.session_state.memory_stats:
-    #         st.metric("Memory Before Processing", f"{st.session_state.memory_stats['memory_before']:.1f} MB")
-    #     if 'memory_after' in st.session_state.memory_stats:
-    #         st.metric("Memory After Processing", f"{st.session_state.memory_stats['memory_after']:.1f} MB")
-    #     if 'memory_used' in st.session_state.memory_stats:
-    #         st.metric("Memory Used for Prediction", f"{st.session_state.memory_stats['memory_used']:.1f} MB")
+    # Display session memory stats if available
+    if st.session_state.memory_stats:
+        st.subheader("Processing Stats")
+        if 'memory_before' in st.session_state.memory_stats:
+            st.metric("Memory Before Processing", f"{st.session_state.memory_stats['memory_before']:.1f} MB")
+        if 'memory_after' in st.session_state.memory_stats:
+            st.metric("Memory After Processing", f"{st.session_state.memory_stats['memory_after']:.1f} MB")
+        if 'memory_used' in st.session_state.memory_stats:
+            st.metric("Memory Used for Prediction", f"{st.session_state.memory_stats['memory_used']:.1f} MB")
     
     st.divider()
     
-    # # Memory cleanup button
-    # if st.button("🧹 Clean Memory"):
-    #     initial_memory = get_memory_usage()
-    #     cleanup_memory()
-    #     final_memory = get_memory_usage()
-    #     memory_freed = initial_memory - final_memory
-    #     st.success(f"Memory cleaned! Freed: {memory_freed:.1f} MB")
-    #     st.rerun()
+    # Memory cleanup button
+    if st.button("🧹 Clean Memory"):
+        initial_memory = get_memory_usage()
+        cleanup_memory()
+        final_memory = get_memory_usage()
+        memory_freed = initial_memory - final_memory
+        st.success(f"Memory cleaned! Freed: {memory_freed:.1f} MB")
+        st.rerun()
     
-    # # Clear session state button
-    # if st.button("🗑️ Clear Session State"):
-    #     initial_memory = get_memory_usage()
-    #     cleanup_session_state()
-    #     final_memory = get_memory_usage()
-    #     memory_freed = initial_memory - final_memory
-    #     st.success(f"Session cleared! Freed: {memory_freed:.1f} MB")
-    #     st.rerun()
+    # Clear session state button
+    if st.button("🗑️ Clear Session State"):
+        initial_memory = get_memory_usage()
+        cleanup_session_state()
+        final_memory = get_memory_usage()
+        memory_freed = initial_memory - final_memory
+        st.success(f"Session cleared! Freed: {memory_freed:.1f} MB")
+        st.rerun()
     
     # Clear cache button
-    # if st.button("� Clear All Cache"):
-    #     initial_memory = get_memory_usage()
-    #     clear_streamlit_cache()
-    #     cleanup_session_state()
-    #     final_memory = get_memory_usage()
-    #     memory_freed = initial_memory - final_memory
-    #     st.success(f"Cache cleared! Freed: {memory_freed:.1f} MB")
-    #     st.rerun()
+    if st.button("� Clear All Cache"):
+        initial_memory = get_memory_usage()
+        clear_streamlit_cache()
+        cleanup_session_state()
+        final_memory = get_memory_usage()
+        memory_freed = initial_memory - final_memory
+        st.success(f"Cache cleared! Freed: {memory_freed:.1f} MB")
+        st.rerun()
     
-    # # Force reload model button
-    # if st.button("� Force Model Cleanup"):
-    #     initial_memory = get_memory_usage()
-    #     force_model_cleanup()
-    #     final_memory = get_memory_usage()
-    #     memory_freed = initial_memory - final_memory
-    #     st.success(f"Model cleanup! Freed: {memory_freed:.1f} MB")
-    #     st.rerun()
+    # Force reload model button
+    if st.button("� Force Model Cleanup"):
+        initial_memory = get_memory_usage()
+        force_model_cleanup()
+        final_memory = get_memory_usage()
+        memory_freed = initial_memory - final_memory
+        st.success(f"Model cleanup! Freed: {memory_freed:.1f} MB")
+        st.rerun()
     
-    # # Nuclear option - restart everything
-    # if st.button("💥 Nuclear Cleanup"):
-    #     initial_memory = get_memory_usage()
-    #     force_model_cleanup()
-    #     cleanup_session_state()
-    #     clear_streamlit_cache()
-    #     # Clear all session state
-    #     for key in list(st.session_state.keys()):
-    #         del st.session_state[key]
-    #     final_memory = get_memory_usage()
-    #     memory_freed = initial_memory - final_memory
-    #     st.success(f"Nuclear cleanup! Freed: {memory_freed:.1f} MB")
-    #     st.rerun()
+    # Nuclear option - restart everything
+    if st.button("💥 Nuclear Cleanup"):
+        initial_memory = get_memory_usage()
+        force_model_cleanup()
+        cleanup_session_state()
+        clear_streamlit_cache()
+        # Clear all session state
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        final_memory = get_memory_usage()
+        memory_freed = initial_memory - final_memory
+        st.success(f"Nuclear cleanup! Freed: {memory_freed:.1f} MB")
+        st.rerun()
 
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
@@ -223,8 +223,8 @@ current_file_id = get_file_id(uploaded_file)
 # If no file is uploaded, clean up and show message
 if uploaded_file is None:
     clear_streamlit_cache()
-    # cleanup_session_state()
-    # st.rerun()
+    cleanup_session_state()
+    st.rerun()
     if st.session_state.current_file_id is not None:
         cleanup_session_state()
     st.info("Please upload an image to start analysis.")
@@ -232,7 +232,9 @@ if uploaded_file is None:
 # If file has changed, clean up previous results and process new file
 elif current_file_id != st.session_state.current_file_id:
     # Clean up previous results
+    clear_streamlit_cache()
     cleanup_session_state()
+    st.rerun()
     
     # Update current file ID
     st.session_state.current_file_id = current_file_id
