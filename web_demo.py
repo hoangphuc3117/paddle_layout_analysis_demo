@@ -207,7 +207,10 @@ elif current_file_id != st.session_state.current_file_id:
         st.session_state.memory_stats['memory_before'] = memory_before_pred
 
         print(f"Processing image: {st.session_state.temp_file_path}")
-        output = model.predict(st.session_state.temp_file_path, batch_size=1)
+        try:
+            output = model.predict(st.session_state.temp_file_path, batch_size=1)
+        except Exception as e:
+            st.error(f"Error during prediction: {e}")
         
         memory_after_pred = get_memory_usage()
         memory_used = memory_after_pred - memory_before_pred
@@ -222,9 +225,10 @@ elif current_file_id != st.session_state.current_file_id:
         os.makedirs(output_dir, exist_ok=True)
 
         # Save results
-        for res in output:
-            res.save_to_img(output_dir)
-            res.save_to_json(output_dir)
+        if output:
+            for res in output:
+                res.save_to_img(output_dir)
+                res.save_to_json(output_dir)
 
         # Store results in session state
         st.session_state.results = {
