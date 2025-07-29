@@ -39,11 +39,8 @@ def download_models_from_kaggle():
         with st.spinner("Downloading models from Kaggle Hub... This may take a few minutes."):
             # Download latest version
             path = kagglehub.model_download("phuchoangnguyen/model_paddle_layout_nhom_nhan/pyTorch/default")
-        st.success(f"✅ Models downloaded successfully to: {path}")
         return path
     except Exception as e:
-        st.error(f"❌ Error downloading models from Kaggle Hub: {e}")
-        st.info("💡 Make sure you have an internet connection and the Kaggle model exists.")
         return None
 
 # Load model once
@@ -54,7 +51,6 @@ def load_model():
     kaggle_model_path = getattr(st.session_state, 'kaggle_model_path', None)
     
     if kaggle_model_path and os.path.exists(kaggle_model_path):
-        st.info(f"Using models from Kaggle Hub: {kaggle_model_path}")
         # You may need to adjust these paths based on the structure of the downloaded models
         layout_detection_dir = os.path.join(kaggle_model_path, "models/layout_detection") if os.path.exists(os.path.join(kaggle_model_path, "models/layout_detection")) else "models/layout_detection"
         text_detection_dir = os.path.join(kaggle_model_path, "models/text_detection") if os.path.exists(os.path.join(kaggle_model_path, "models/text_detection")) else "models/text_detection"
