@@ -5,6 +5,11 @@ import os
 import psutil
 import hashlib
 
+# Set OpenCV environment variables for headless operation
+os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
+os.environ['OPENCV_IO_ENABLE_JASPER'] = '1' 
+os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+
 # Set page config for fullscreen (wide) layout
 st.set_page_config(page_title="PP-Structure V3 Demo", layout="wide")
 # from paddlex import create_model
