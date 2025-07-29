@@ -119,5 +119,12 @@ if uploaded_file is not None:
             st.text(f"File: {filename}")
             st.json(json_data, expanded=False)
 
-    # Clean up temp file
-    os.remove(tmp_img_path)
+     # Clean up temporary file and memory
+    try:
+        if tmp_img_path and os.path.exists(tmp_img_path):
+            os.remove(tmp_img_path)
+    except:
+        pass
+    
+    # Final memory cleanup
+    cleanup_memory()
