@@ -233,9 +233,6 @@ elif current_file_id != st.session_state.current_file_id:
             'json_files': glob.glob(os.path.join(output_dir, "*.json"))
         }
 
-        # Clean up memory after processing
-        cleanup_memory()
-
 # Display results if available
 if st.session_state.results and st.session_state.temp_file_path:
     st.subheader("Original Image")
@@ -273,3 +270,6 @@ if st.session_state.results and st.session_state.temp_file_path:
                 json_data = json.load(f)
             st.text(f"File: {filename}")
             st.json(json_data, expanded=False)
+
+    clear_streamlit_cache()
+    model = load_model()
