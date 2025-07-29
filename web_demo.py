@@ -273,5 +273,11 @@ if st.session_state.results and st.session_state.temp_file_path:
             st.text(f"File: {filename}")
             st.json(json_data, expanded=False)
 
-    clear_streamlit_cache()
-    model = load_model()
+
+    
+initial_memory = get_memory_usage()
+clear_streamlit_cache()
+cleanup_session_state()
+final_memory = get_memory_usage()
+memory_freed = initial_memory - final_memory
+model = load_model()
