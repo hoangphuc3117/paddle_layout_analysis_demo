@@ -276,10 +276,12 @@ if st.session_state.results and st.session_state.temp_file_path:
                 json_data = json.load(f)
             st.text(f"File: {filename}")
             st.json(json_data, expanded=False)
-            
+      
     clear_streamlit_cache()
     cleanup_session_state()
     current_memory = get_memory_usage()
     st.metric("Current Memory Usage", f"{current_memory:.1f} MB")
-    model = load_model()
-    
+    try:
+        model = load_model()
+    except Exception as e:
+        print(f"Error loading model: {e}")
