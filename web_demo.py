@@ -164,8 +164,6 @@ with st.sidebar:
         st.success(f"Cache cleared! Freed: {memory_freed:.1f} MB")
         st.rerun()
 
-model = load_model()
-
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
 # Check if file has changed
