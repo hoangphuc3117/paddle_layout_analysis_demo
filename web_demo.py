@@ -4,9 +4,6 @@ import gc
 import os
 import psutil
 import hashlib
-import requests
-import zipfile
-from pathlib import Path
 
 # Set OpenCV environment variables for headless operation
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
@@ -24,135 +21,6 @@ import json
 import tempfile
 
 st.title("PP-Structure V3 Demo")
-
-# Model download URLs - Replace these with your actual hosted model URLs
-MODEL_URLS = {
-    "layout_detection": {
-        "inference.pdiparams": "https://your-host.com/models/layout_detection/inference.pdiparams",
-        "inference.json": "https://your-host.com/models/layout_detection/inference.json", 
-        "inference.yml": "https://your-host.com/models/layout_detection/inference.yml"
-    },
-    "text_detection": {
-        "inference.pdiparams": "https://your-host.com/models/text_detection/inference.pdiparams",
-        "inference.json": "https://your-host.com/models/text_detection/inference.json",
-        "inference.yml": "https://your-host.com/models/text_detection/inference.yml"
-    },
-    "text_recognition": {
-        "inference.pdiparams": "https://your-host.com/models/text_recognition/inference.pdiparams", 
-        "inference.json": "https://your-host.com/models/text_recognition/inference.json",
-        "inference.yml": "https://your-host.com/models/text_recognition/inference.yml"
-    }
-}
-
-def download_file_with_progress(url, local_path, description="Downloading"):
-    """Download a file with progress bar using requests"""
-    try:
-        os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        
-        # Create a progress bar
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        # Download with requests
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        
-        total_size = int(response.headers.get('content-length', 0))
-        downloaded = 0
-        
-        with open(local_path, 'wb') as file:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    file.write(chunk)
-                    downloaded += len(chunk)
-                    
-                    if total_size > 0:
-                        percent = min(100, (downloaded * 100) // total_size)
-                        progress_bar.progress(percent / 100)
-                        status_text.text(f"{description}: {percent}% ({downloaded//1024//1024}MB/{total_size//1024//1024}MB)")
-        
-        progress_bar.empty()
-        status_text.empty()
-        return True
-    except Exception as e:
-        st.error(f"Failed to download {url}: {str(e)}")
-        return False
-
-def check_and_download_models():
-    """Check if models exist, download if missing"""
-    models_dir = Path("models")
-    
-    # Check if any model files are missing or are LFS pointer files (< 1KB indicates LFS pointer)
-    missing_files = []
-    
-    for model_type, files in MODEL_URLS.items():
-        model_path = models_dir / model_type
-        for filename, url in files.items():
-            file_path = model_path / filename
-            if not file_path.exists() or file_path.stat().st_size < 1024:  # LFS pointer files are tiny
-                missing_files.append((model_type, filename, url, file_path))
-    
-    if missing_files:
-        st.warning(f"Found {len(missing_files)} model files to download. This may take a few minutes...")
-        
-        # Create a container for download progress
-        download_container = st.container()
-        
-        with download_container:
-            for model_type, filename, url, file_path in missing_files:
-                st.info(f"Downloading {model_type}/{filename}...")
-                
-                if download_file_with_progress(url, str(file_path), f"{model_type}/{filename}"):
-                    st.success(f"✅ Downloaded {model_type}/{filename}")
-                else:
-                    st.error(f"❌ Failed to download {model_type}/{filename}")
-                    return False
-        
-        st.success("🎉 All model files downloaded successfully!")
-        return True
-    else:
-        st.success("✅ All model files are already available!")
-        return True
-
-def get_github_lfs_url(repo_owner, repo_name, file_path, branch="main"):
-    """Generate GitHub LFS download URL"""
-    return f"https://github.com/{repo_owner}/{repo_name}/raw/{branch}/{file_path}"
-
-def setup_models_from_github_lfs():
-    """Alternative: Download directly from GitHub LFS"""
-    repo_owner = "hoangphuc3117"  
-    repo_name = "paddle_layout_analysis_demo"
-    
-    models_to_download = [
-        "models/layout_detection/inference.pdiparams",
-        "models/layout_detection/inference.json", 
-        "models/layout_detection/inference.yml",
-        "models/text_detection/inference.pdiparams",
-        "models/text_detection/inference.json",
-        "models/text_detection/inference.yml", 
-        "models/text_recognition/inference.pdiparams",
-        "models/text_recognition/inference.json",
-        "models/text_recognition/inference.yml"
-    ]
-    
-    st.info("Downloading model files from GitHub LFS...")
-    
-    for file_path in models_to_download:
-        local_path = Path(file_path)
-        
-        # Skip if file exists and is not an LFS pointer
-        if local_path.exists() and local_path.stat().st_size > 1024:
-            continue
-            
-        url = get_github_lfs_url(repo_owner, repo_name, file_path)
-        
-        if download_file_with_progress(url, str(local_path), f"Downloading {local_path.name}"):
-            st.success(f"✅ Downloaded {file_path}")
-        else:
-            st.error(f"❌ Failed to download {file_path}")
-            return False
-    
-    return True
 
 # Initialize session state
 if 'current_file_id' not in st.session_state:
@@ -181,13 +49,6 @@ def get_file_id(uploaded_file):
 # Load model once
 @st.cache_resource
 def load_model():
-    # First, ensure all model files are downloaded
-    if not check_and_download_models():
-        # Fallback to GitHub LFS if custom URLs don't work
-        if not setup_models_from_github_lfs():
-            st.error("Failed to download model files. Please check your internet connection.")
-            st.stop()
-    
     # model_name = "PP-DocLayout_plus-L"
     # model_dir = "model"
     # model = create_model(model_name=model_name, model_dir=model_dir, device="cpu")
@@ -208,24 +69,6 @@ def load_model():
     return model
 
 model = load_model()
-
-# Add manual download option in sidebar
-with st.sidebar:
-    st.header("Model Management")
-    
-    if st.button("🔄 Re-download Models"):
-        st.cache_resource.clear()
-        # Force re-download by removing existing files
-        shutil.rmtree("models", ignore_errors=True)
-        st.rerun()
-    
-    st.info("""
-    **Note for Railway Deployment:**
-    - Model files are automatically downloaded on first run
-    - This may take 2-3 minutes initially  
-    - Files are cached between deployments
-    """)
-
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
 # Check if file has changed
