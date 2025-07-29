@@ -40,7 +40,14 @@ model = load_model()
 
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
+if 'last_file' not in st.session_state:
+    st.session_state.last_file = None
+    
 if uploaded_file is not None:
+    if st.session_state.last_file != uploaded_file.name:
+        st.session_state.last_file = uploaded_file.name
+        st.rerun()
+
     # Save uploaded file to a temp location
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
         tmp_file.write(uploaded_file.read())
