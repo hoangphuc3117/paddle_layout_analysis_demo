@@ -34,77 +34,6 @@ if 'memory_stats' not in st.session_state:
 if 'model_loaded' not in st.session_state:
     st.session_state.model_loaded = False
 
-# Memory cleanup function
-def cleanup_memory():
-    """Comprehensive memory cleanup"""
-    # Force garbage collection multiple times
-    for _ in range(5):
-        gc.collect()
-    
-    # Clear any cached variables
-    if 'cached_vars' in locals():
-        del cached_vars
-    
-    # Try to clear PaddlePaddle cache if exists
-    try:
-        import paddle
-        if hasattr(paddle, 'device'):
-            if paddle.device.is_compiled_with_cuda():
-                paddle.device.cuda.empty_cache()
-                paddle.device.cuda.synchronize()
-    except Exception as e:
-        print(f"Paddle cleanup error: {e}")
-    
-    # Force Python to release memory back to OS
-    try:
-        import ctypes
-        libc = ctypes.CDLL("libc.so.6")
-        libc.malloc_trim(0)
-    except:
-        pass
-
-def cleanup_session_state():
-    """Clean up session state and temporary files"""
-    # Clean up temp file if exists
-    if 'temp_file_path' in st.session_state and st.session_state.temp_file_path and os.path.exists(st.session_state.temp_file_path):
-        try:
-            os.unlink(st.session_state.temp_file_path)
-        except:
-            pass
-    
-    # Clean up output directory
-    output_dir = "output"
-    if os.path.exists(output_dir):
-        try:
-            shutil.rmtree(output_dir)
-        except:
-            pass
-    
-    # Clear results from memory first
-    if 'results' in st.session_state and st.session_state.results:
-        del st.session_state.results
-    
-    # Reset session state
-    st.session_state.current_file_id = None
-    st.session_state.results = None
-    st.session_state.temp_file_path = None
-    st.session_state.memory_stats = {}
-    
-    # Force cleanup
-    cleanup_memory()
-
-def force_model_cleanup():
-    """Force cleanup of model resources"""
-    try:
-        # Clear the cached model
-        st.cache_resource.clear()
-        
-        # Force garbage collection
-        cleanup_memory()
-        
-    except Exception as e:
-        print(f"Model cleanup error: {e}")
-
 def get_file_id(uploaded_file):
     """Generate unique ID for uploaded file"""
     if uploaded_file is None:
@@ -116,17 +45,6 @@ def get_file_id(uploaded_file):
     
     file_info = f"{uploaded_file.name}_{uploaded_file.size}_{len(file_content)}"
     return hashlib.md5(file_info.encode()).hexdigest()
-
-def clear_streamlit_cache():
-    """Clear Streamlit cache"""
-    st.cache_resource.clear()
-    st.cache_data.clear()
-
-def get_memory_usage():
-    """Get current memory usage"""
-    process = psutil.Process(os.getpid())
-    memory_info = process.memory_info()
-    return memory_info.rss / 1024 / 1024  # MB
 
 # Load model once
 @st.cache_resource
@@ -150,50 +68,16 @@ def load_model():
     )
     return model
 
-with st.sidebar:
-    st.header("Memory Management")
-    
-    # Display current memory usage
-    current_memory = get_memory_usage()
-    st.metric("Current Memory Usage", f"{current_memory:.1f} MB")
-    
-    st.divider()
-    
-    # Clear cache button
-    if st.button("� Clear All Cache"):
-        initial_memory = get_memory_usage()
-        clear_streamlit_cache()
-        cleanup_session_state()
-        force_model_cleanup()
-        final_memory = get_memory_usage()
-        memory_freed = initial_memory - final_memory
-        st.success(f"Cache cleared! Freed: {memory_freed:.1f} MB")
-        st.rerun()
+model = load_model()
 
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
 # Check if file has changed
 current_file_id = get_file_id(uploaded_file)
-
-clear_streamlit_cache()
-
-# If no file is uploaded, clean up and show message
-if uploaded_file is None:
-    # clear_streamlit_cache()
-    # cleanup_session_state()
-    # st.rerun()
-    if st.session_state.current_file_id is not None:
-        cleanup_session_state()
-        force_model_cleanup()
-    st.info("Please upload an image to start analysis.")
     
 # If file has changed, clean up previous results and process new file
-elif current_file_id != st.session_state.current_file_id:
-    # Clean up previous results
-    # clear_streamlit_cache()
-    # cleanup_session_state()
-    # st.rerun()
-    
+if current_file_id != st.session_state.current_file_id:
+
     # Update current file ID
     st.session_state.current_file_id = current_file_id
     
@@ -204,24 +88,11 @@ elif current_file_id != st.session_state.current_file_id:
 
     # Run prediction with loading spinner
     with st.spinner('Processing... Please wait while we analyze your image.'):
-        if not st.session_state.model_loaded:
-            st.session_state.model_loaded = True
-        model = load_model()
-
-        memory_before_pred = get_memory_usage()
-        st.session_state.memory_stats['memory_before'] = memory_before_pred
-
         print(f"Processing image: {st.session_state.temp_file_path}")
         try:
             output = model.predict(st.session_state.temp_file_path, batch_size=1)
         except Exception as e:
             st.error(f"Error during prediction: {e}")
-        
-        memory_after_pred = get_memory_usage()
-        memory_used = memory_after_pred - memory_before_pred
-        
-        st.session_state.memory_stats['memory_after'] = memory_after_pred
-        st.session_state.memory_stats['memory_used'] = memory_used
 
         output_dir = "output"
         if os.path.exists(output_dir):
@@ -281,13 +152,3 @@ if st.session_state.results and st.session_state.temp_file_path:
                 json_data = json.load(f)
             st.text(f"File: {filename}")
             st.json(json_data, expanded=False)
-      
-    clear_streamlit_cache()
-    cleanup_session_state()
-    force_model_cleanup()
-    current_memory = get_memory_usage()
-    st.metric("Current Memory Usage", f"{current_memory:.1f} MB")
-    try:
-        model = load_model()
-    except Exception as e:
-        print(f"Error loading model: {e}")
