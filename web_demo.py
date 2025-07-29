@@ -222,9 +222,9 @@ current_file_id = get_file_id(uploaded_file)
 
 # If no file is uploaded, clean up and show message
 if uploaded_file is None:
-    clear_streamlit_cache()
-    cleanup_session_state()
-    st.rerun()
+    # clear_streamlit_cache()
+    # cleanup_session_state()
+    # st.rerun()
     if st.session_state.current_file_id is not None:
         cleanup_session_state()
     st.info("Please upload an image to start analysis.")
@@ -232,9 +232,9 @@ if uploaded_file is None:
 # If file has changed, clean up previous results and process new file
 elif current_file_id != st.session_state.current_file_id:
     # Clean up previous results
-    clear_streamlit_cache()
-    cleanup_session_state()
-    st.rerun()
+    # clear_streamlit_cache()
+    # cleanup_session_state()
+    # st.rerun()
     
     # Update current file ID
     st.session_state.current_file_id = current_file_id
