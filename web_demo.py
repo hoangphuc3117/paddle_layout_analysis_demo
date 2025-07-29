@@ -106,82 +106,82 @@ model = load_model()
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
 # Check if file has changed
-current_file_id = get_file_id(uploaded_file)
-    
-# If file has changed, clean up previous results and process new file
-if current_file_id != st.session_state.current_file_id:
+if uploaded_file is not None:
+    current_file_id = get_file_id(uploaded_file)
+    # If file has changed, clean up previous results and process new file
+    if current_file_id != st.session_state.current_file_id:
 
-    # Update current file ID
-    st.session_state.current_file_id = current_file_id
-    
-    # Save uploaded file to a temp location
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
-        tmp_file.write(uploaded_file.read())
-        st.session_state.temp_file_path = tmp_file.name
+        # Update current file ID
+        st.session_state.current_file_id = current_file_id
+        
+        # Save uploaded file to a temp location
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
+            tmp_file.write(uploaded_file.read())
+            st.session_state.temp_file_path = tmp_file.name
 
-    # Run prediction with loading spinner
-    with st.spinner('Processing... Please wait while we analyze your image.'):
-        print(f"Processing image: {st.session_state.temp_file_path}")
-        try:
-            output = model.predict(st.session_state.temp_file_path, batch_size=1)
-        except Exception as e:
-            st.error(f"Error during prediction: {e}")
+        # Run prediction with loading spinner
+        with st.spinner('Processing... Please wait while we analyze your image.'):
+            print(f"Processing image: {st.session_state.temp_file_path}")
+            try:
+                output = model.predict(st.session_state.temp_file_path, batch_size=1)
+            except Exception as e:
+                st.error(f"Error during prediction: {e}")
 
-        output_dir = "output"
-        if os.path.exists(output_dir):
-            shutil.rmtree(output_dir)
+            output_dir = "output"
+            if os.path.exists(output_dir):
+                shutil.rmtree(output_dir)
 
-        os.makedirs(output_dir, exist_ok=True)
+            os.makedirs(output_dir, exist_ok=True)
 
-        # Save results
-        if output:
-            for res in output:
-                res.save_to_img(output_dir)
-                res.save_to_json(output_dir)
+            # Save results
+            if output:
+                for res in output:
+                    res.save_to_img(output_dir)
+                    res.save_to_json(output_dir)
 
-        # Store results in session state
-        st.session_state.results = {
-            'output_dir': output_dir,
-            'image_files': glob.glob(os.path.join(output_dir, "*.jpg")) + \
-                          glob.glob(os.path.join(output_dir, "*.jpeg")) + \
-                          glob.glob(os.path.join(output_dir, "*.png")),
-            'json_files': glob.glob(os.path.join(output_dir, "*.json"))
-        }
+            # Store results in session state
+            st.session_state.results = {
+                'output_dir': output_dir,
+                'image_files': glob.glob(os.path.join(output_dir, "*.jpg")) + \
+                            glob.glob(os.path.join(output_dir, "*.jpeg")) + \
+                            glob.glob(os.path.join(output_dir, "*.png")),
+                'json_files': glob.glob(os.path.join(output_dir, "*.json"))
+            }
 
-# Display results if available
-if st.session_state.results and st.session_state.temp_file_path:
-    st.subheader("Original Image")
-    st.image(st.session_state.temp_file_path, caption="Uploaded Image", use_container_width=False)
-    
-    st.subheader("Detection Results")
-    
-    image_files = st.session_state.results['image_files']
-    json_files = st.session_state.results['json_files']
-    
-    # Display images
-    if image_files:
-        for i in range(0, len(image_files), 2):
-            col1, col2 = st.columns(2)
-            
-            # First image in left column
-            img_path1 = sorted(image_files)[i]
-            filename1 = os.path.basename(img_path1)
-            with col1:
-                st.image(img_path1, caption=f"Result: {filename1}", use_container_width=False)
-            
-            # Second image in right column (if exists)
-            if i + 1 < len(image_files):
-                img_path2 = sorted(image_files)[i + 1]
-                filename2 = os.path.basename(img_path2)
-                with col2:
-                    st.image(img_path2, caption=f"Result: {filename2}", use_container_width=False)
-    
-    # Display JSON results
-    if json_files:
-        st.subheader("Detection Results (JSON)")
-        for json_path in sorted(json_files):
-            filename = os.path.basename(json_path)
-            with open(json_path, "r") as f:
-                json_data = json.load(f)
-            st.text(f"File: {filename}")
-            st.json(json_data, expanded=False)
+    # Display results if available
+    if st.session_state.results and st.session_state.temp_file_path:
+        st.subheader("Original Image")
+        st.image(st.session_state.temp_file_path, caption="Uploaded Image", use_container_width=False)
+        
+        st.subheader("Detection Results")
+        
+        image_files = st.session_state.results['image_files']
+        json_files = st.session_state.results['json_files']
+        
+        # Display images
+        if image_files:
+            for i in range(0, len(image_files), 2):
+                col1, col2 = st.columns(2)
+                
+                # First image in left column
+                img_path1 = sorted(image_files)[i]
+                filename1 = os.path.basename(img_path1)
+                with col1:
+                    st.image(img_path1, caption=f"Result: {filename1}", use_container_width=False)
+                
+                # Second image in right column (if exists)
+                if i + 1 < len(image_files):
+                    img_path2 = sorted(image_files)[i + 1]
+                    filename2 = os.path.basename(img_path2)
+                    with col2:
+                        st.image(img_path2, caption=f"Result: {filename2}", use_container_width=False)
+        
+        # Display JSON results
+        if json_files:
+            st.subheader("Detection Results (JSON)")
+            for json_path in sorted(json_files):
+                filename = os.path.basename(json_path)
+                with open(json_path, "r") as f:
+                    json_data = json.load(f)
+                st.text(f"File: {filename}")
+                st.json(json_data, expanded=False)
