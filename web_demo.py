@@ -201,7 +201,7 @@ elif current_file_id != st.session_state.current_file_id:
     with st.spinner('Processing... Please wait while we analyze your image.'):
         if not st.session_state.model_loaded:
             st.session_state.model_loaded = True
-        
+        model = load_model()
 
         memory_before_pred = get_memory_usage()
         st.session_state.memory_stats['memory_before'] = memory_before_pred
@@ -277,11 +277,10 @@ if st.session_state.results and st.session_state.temp_file_path:
             st.text(f"File: {filename}")
             st.json(json_data, expanded=False)
 
-
+    initial_memory = get_memory_usage()
+    clear_streamlit_cache()
+    cleanup_session_state()
+    current_memory = get_memory_usage()
+    st.metric("Current Memory Usage", f"{current_memory:.1f} MB")
+    model = load_model()
     
-initial_memory = get_memory_usage()
-clear_streamlit_cache()
-cleanup_session_state()
-final_memory = get_memory_usage()
-memory_freed = initial_memory - final_memory
-model = load_model()
