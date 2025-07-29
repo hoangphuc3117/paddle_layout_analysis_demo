@@ -27,7 +27,6 @@ def download_models_from_kaggle():
         return None
 
 # Load model once
-@st.cache_resource
 def load_model():
     # model_name = "PP-DocLayout_plus-L"
     # model_dir = "model"
@@ -47,25 +46,6 @@ def load_model():
         text_detection_dir = "models/text_detection"
         text_recognition_dir = "models/text_recognition"
 
-    model = PPStructureV3(
-        use_doc_orientation_classify=True,
-        use_doc_unwarping=False,
-        layout_detection_model_name="PP-DocLayout-L",
-        layout_detection_model_dir=layout_detection_dir,
-        text_detection_model_name="PP-OCRv5_server_det",
-        text_detection_model_dir=text_detection_dir,
-        text_recognition_model_name="PP-OCRv5_server_rec",
-        text_recognition_model_dir=text_recognition_dir,
-        use_table_recognition=False,
-        use_seal_recognition=False,
-        use_chart_recognition=False,
-        use_formula_recognition=False,
-    )
-
-    return model
-
-model = load_model()
-
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
 if 'last_file' not in st.session_state:
@@ -84,6 +64,20 @@ if uploaded_file is not None:
 
     # Run prediction with loading spinner
     with st.spinner('Processing... Please wait while we analyze your image.'):
+        model = PPStructureV3(
+            use_doc_orientation_classify=True,
+            use_doc_unwarping=False,
+            layout_detection_model_name="PP-DocLayout-L",
+            layout_detection_model_dir=layout_detection_dir,
+            text_detection_model_name="PP-OCRv5_server_det",
+            text_detection_model_dir=text_detection_dir,
+            text_recognition_model_name="PP-OCRv5_server_rec",
+            text_recognition_model_dir=text_recognition_dir,
+            use_table_recognition=False,
+            use_seal_recognition=False,
+            use_chart_recognition=False,
+            use_formula_recognition=False,
+        )
         output = model.predict(img_np, batch_size=1, layout_nms=True)
 
     output_dir = "output"
