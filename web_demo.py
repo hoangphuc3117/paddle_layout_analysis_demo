@@ -62,7 +62,26 @@ if uploaded_file is not None:
 
     # Run prediction with loading spinner
     with st.spinner('Processing... Please wait while we analyze your image.'):
-        output = model.predict(tmp_img_path, batch_size=1, layout_nms=True)
+        try:
+            cleanup_memory()
+            output = model.predict(tmp_img_path, batch_size=1, layout_nms=True)
+            cleanup_memory()
+        except RuntimeError as e:
+            st.error("Memory or runtime error occurred:")
+            st.error("- This might be due to insufficient memory")
+            st.error("- Try with a smaller image")
+            st.error("- Close other applications to free up memory")
+            st.error(f"Technical details: {str(e)}")
+            if tmp_img_path and os.path.exists(tmp_img_path):
+                os.remove(tmp_img_path)
+            cleanup_memory()
+            st.stop()
+        except Exception as e:
+            st.error(f"Unexpected error during prediction: {str(e)}")
+            if tmp_img_path and os.path.exists(tmp_img_path):
+                os.remove(tmp_img_path)
+            cleanup_memory()
+            st.stop()
 
     output_dir = "output"
     if os.path.exists(output_dir):
