@@ -276,8 +276,7 @@ if st.session_state.results and st.session_state.temp_file_path:
                 json_data = json.load(f)
             st.text(f"File: {filename}")
             st.json(json_data, expanded=False)
-
-    initial_memory = get_memory_usage()
+            
     clear_streamlit_cache()
     cleanup_session_state()
     current_memory = get_memory_usage()
