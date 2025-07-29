@@ -1,5 +1,6 @@
 
 import streamlit as st
+import gc
 
 # Set page config for fullscreen (wide) layout
 st.set_page_config(page_title="PP-Structure V3 Demo", layout="wide")
@@ -12,6 +13,11 @@ import glob
 import json
 
 st.title("PP-Structure V3 Demo")
+
+# Memory cleanup function
+def cleanup_memory():
+    """Clean up memory"""
+    gc.collect()
 
 # Load model once
 @st.cache_resource
@@ -46,6 +52,7 @@ if 'last_file' not in st.session_state:
 if uploaded_file is not None:
     if st.session_state.last_file != uploaded_file.name:
         st.session_state.last_file = uploaded_file.name
+        cleanup_memory()
         st.rerun()
 
     # Save uploaded file to a temp location
