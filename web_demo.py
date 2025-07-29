@@ -159,6 +159,7 @@ with st.sidebar:
         initial_memory = get_memory_usage()
         clear_streamlit_cache()
         cleanup_session_state()
+        force_model_cleanup()
         final_memory = get_memory_usage()
         memory_freed = initial_memory - final_memory
         st.success(f"Cache cleared! Freed: {memory_freed:.1f} MB")
@@ -178,6 +179,7 @@ if uploaded_file is None:
     # st.rerun()
     if st.session_state.current_file_id is not None:
         cleanup_session_state()
+        force_model_cleanup()
     st.info("Please upload an image to start analysis.")
     
 # If file has changed, clean up previous results and process new file
@@ -277,7 +279,7 @@ if st.session_state.results and st.session_state.temp_file_path:
       
     clear_streamlit_cache()
     cleanup_session_state()
-    cleanup_memory
+    force_model_cleanup()
     current_memory = get_memory_usage()
     st.metric("Current Memory Usage", f"{current_memory:.1f} MB")
     try:
