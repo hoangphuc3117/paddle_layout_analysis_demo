@@ -10,3 +10,4 @@ setuptools
 psutil
 Pillow
 numpy
+opencv-python
