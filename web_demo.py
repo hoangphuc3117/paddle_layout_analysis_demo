@@ -4,6 +4,7 @@ import gc
 import os
 import psutil
 import hashlib
+import kagglehub
 
 # Set OpenCV environment variables for headless operation
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
@@ -20,20 +21,6 @@ import glob
 import json
 import tempfile
 
-st.title("PP-Structure V3 Demo")
-
-# Initialize session state
-if 'current_file_id' not in st.session_state:
-    st.session_state.current_file_id = None
-if 'results' not in st.session_state:
-    st.session_state.results = None
-if 'temp_file_path' not in st.session_state:
-    st.session_state.temp_file_path = None
-if 'memory_stats' not in st.session_state:
-    st.session_state.memory_stats = {}
-if 'model_loaded' not in st.session_state:
-    st.session_state.model_loaded = False
-
 def get_file_id(uploaded_file):
     """Generate unique ID for uploaded file"""
     if uploaded_file is None:
@@ -46,9 +33,38 @@ def get_file_id(uploaded_file):
     file_info = f"{uploaded_file.name}_{uploaded_file.size}_{len(file_content)}"
     return hashlib.md5(file_info.encode()).hexdigest()
 
+def download_models_from_kaggle():
+    """Download models from Kaggle Hub"""
+    try:
+        with st.spinner("Downloading models from Kaggle Hub... This may take a few minutes."):
+            # Download latest version
+            path = kagglehub.model_download("phuchoangnguyen/model_paddle_layout_nhom_nhan/pyTorch/default")
+        st.success(f"✅ Models downloaded successfully to: {path}")
+        return path
+    except Exception as e:
+        st.error(f"❌ Error downloading models from Kaggle Hub: {e}")
+        st.info("💡 Make sure you have an internet connection and the Kaggle model exists.")
+        return None
+
 # Load model once
 @st.cache_resource
 def load_model():
+    st.session_state.kaggle_model_path = download_models_from_kaggle()
+    # Check if Kaggle models are available
+    kaggle_model_path = getattr(st.session_state, 'kaggle_model_path', None)
+    
+    if kaggle_model_path and os.path.exists(kaggle_model_path):
+        st.info(f"Using models from Kaggle Hub: {kaggle_model_path}")
+        # You may need to adjust these paths based on the structure of the downloaded models
+        layout_detection_dir = os.path.join(kaggle_model_path, "models/layout_detection") if os.path.exists(os.path.join(kaggle_model_path, "models/layout_detection")) else "models/layout_detection"
+        text_detection_dir = os.path.join(kaggle_model_path, "models/text_detection") if os.path.exists(os.path.join(kaggle_model_path, "models/text_detection")) else "models/text_detection"
+        text_recognition_dir = os.path.join(kaggle_model_path, "models/text_recognition") if os.path.exists(os.path.join(kaggle_model_path, "models/text_recognition")) else "models/text_recognition"
+    else:
+        # Use default local models
+        layout_detection_dir = "models/layout_detection"
+        text_detection_dir = "models/text_detection"
+        text_recognition_dir = "models/text_recognition"
+    
     # model_name = "PP-DocLayout_plus-L"
     # model_dir = "model"
     # model = create_model(model_name=model_name, model_dir=model_dir, device="cpu")
@@ -56,17 +72,35 @@ def load_model():
         use_doc_orientation_classify=True,
         use_doc_unwarping=False,
         layout_detection_model_name="PP-DocLayout-L",
-        layout_detection_model_dir="models/layout_detection",
+        layout_detection_model_dir=layout_detection_dir,
         text_detection_model_name="PP-OCRv5_server_det",
-        text_detection_model_dir="models/text_detection",
+        text_detection_model_dir=text_detection_dir,
         text_recognition_model_name="PP-OCRv5_server_rec",
-        text_recognition_model_dir="models/text_recognition",
+        text_recognition_model_dir=text_recognition_dir,
         use_table_recognition=False,
         use_seal_recognition=False,
         use_chart_recognition=False,
         use_formula_recognition=False,
     )
     return model
+
+st.title("PP-Structure V3 Demo")
+
+# Model download section
+st.subheader("Model Management")
+col1, col2 = st.columns([1, 3])
+
+# Initialize session state
+if 'current_file_id' not in st.session_state:
+    st.session_state.current_file_id = None
+if 'results' not in st.session_state:
+    st.session_state.results = None
+if 'temp_file_path' not in st.session_state:
+    st.session_state.temp_file_path = None
+if 'memory_stats' not in st.session_state:
+    st.session_state.memory_stats = {}
+if 'model_loaded' not in st.session_state:
+    st.session_state.model_loaded = False
 
 model = load_model()
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])

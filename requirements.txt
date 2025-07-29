@@ -12,3 +12,4 @@ Pillow
 numpy
 urllib3
 requests
+kagglehub
