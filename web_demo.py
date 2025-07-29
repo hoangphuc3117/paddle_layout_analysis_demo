@@ -10,8 +10,19 @@ import tempfile
 import shutil
 import glob
 import json
+import kagglehub
 
 st.title("PP-Structure V3 Demo")
+
+def download_models_from_kaggle():
+    """Download models from Kaggle Hub"""
+    try:
+        with st.spinner("Downloading models from Kaggle Hub... This may take a few minutes."):
+            # Download latest version
+            path = kagglehub.model_download("phuchoangnguyen/model_paddle_layout_nhom_nhan/pyTorch/default")
+        return path
+    except Exception as e:
+        return None
 
 # Load model once
 @st.cache_resource
@@ -19,15 +30,30 @@ def load_model():
     # model_name = "PP-DocLayout_plus-L"
     # model_dir = "model"
     # model = create_model(model_name=model_name, model_dir=model_dir, device="cpu")
+    st.session_state.kaggle_model_path = download_models_from_kaggle()
+    # Check if Kaggle models are available
+    kaggle_model_path = getattr(st.session_state, 'kaggle_model_path', None)
+    
+    if kaggle_model_path and os.path.exists(kaggle_model_path):
+        # You may need to adjust these paths based on the structure of the downloaded models
+        layout_detection_dir = os.path.join(kaggle_model_path, "models/layout_detection") if os.path.exists(os.path.join(kaggle_model_path, "models/layout_detection")) else "models/layout_detection"
+        text_detection_dir = os.path.join(kaggle_model_path, "models/text_detection") if os.path.exists(os.path.join(kaggle_model_path, "models/text_detection")) else "models/text_detection"
+        text_recognition_dir = os.path.join(kaggle_model_path, "models/text_recognition") if os.path.exists(os.path.join(kaggle_model_path, "models/text_recognition")) else "models/text_recognition"
+    else:
+        # Use default local models
+        layout_detection_dir = "models/layout_detection"
+        text_detection_dir = "models/text_detection"
+        text_recognition_dir = "models/text_recognition"
+
     model = PPStructureV3(
         use_doc_orientation_classify=True,
         use_doc_unwarping=False,
         layout_detection_model_name="PP-DocLayout-L",
-        layout_detection_model_dir="models/layout_detection",
+        layout_detection_model_dir=layout_detection_dir,
         text_detection_model_name="PP-OCRv5_server_det",
-        text_detection_model_dir="models/text_detection",
+        text_detection_model_dir=text_detection_dir,
         text_recognition_model_name="PP-OCRv5_server_rec",
-        text_recognition_model_dir="models/text_recognition",
+        text_recognition_model_dir=text_recognition_dir,
         use_table_recognition=False,
         use_seal_recognition=False,
         use_chart_recognition=False,
