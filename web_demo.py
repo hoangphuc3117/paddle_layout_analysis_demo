@@ -164,6 +164,8 @@ with st.sidebar:
         st.success(f"Cache cleared! Freed: {memory_freed:.1f} MB")
         st.rerun()
 
+model = load_model()
+
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
 # Check if file has changed
@@ -199,7 +201,7 @@ elif current_file_id != st.session_state.current_file_id:
     with st.spinner('Processing... Please wait while we analyze your image.'):
         if not st.session_state.model_loaded:
             st.session_state.model_loaded = True
-        model = load_model()
+        
 
         memory_before_pred = get_memory_usage()
         st.session_state.memory_stats['memory_before'] = memory_before_pred
