@@ -26,7 +26,12 @@ def download_models_from_kaggle():
     except Exception as e:
         return None
 
+layout_detection_dir = "models/layout_detection"
+text_detection_dir = "models/text_detection"
+text_recognition_dir = "models/text_recognition"
+
 # Load model once
+@st.cache_resource
 def load_model():
     # model_name = "PP-DocLayout_plus-L"
     # model_dir = "model"
@@ -45,6 +50,8 @@ def load_model():
         layout_detection_dir = "models/layout_detection"
         text_detection_dir = "models/text_detection"
         text_recognition_dir = "models/text_recognition"
+
+load_model()
 
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
