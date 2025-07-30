@@ -32,16 +32,19 @@ def get_model_paths():
     
     kaggle_model_path = st.session_state.kaggle_model_path
     
-    if kaggle_model_path and os.path.exists(kaggle_model_path):
-        # You may need to adjust these paths based on the structure of the downloaded models
-        layout_detection_dir = os.path.join(kaggle_model_path, "models/layout_detection") if os.path.exists(os.path.join(kaggle_model_path, "models/layout_detection")) else "models/layout_detection"
-        text_detection_dir = os.path.join(kaggle_model_path, "models/text_detection") if os.path.exists(os.path.join(kaggle_model_path, "models/text_detection")) else "models/text_detection"
-        text_recognition_dir = os.path.join(kaggle_model_path, "models/text_recognition") if os.path.exists(os.path.join(kaggle_model_path, "models/text_recognition")) else "models/text_recognition"
-    else:
-        # Use default local models
-        layout_detection_dir = "models/layout_detection"
-        text_detection_dir = "models/text_detection"
-        text_recognition_dir = "models/text_recognition"
+    if not kaggle_model_path or not os.path.exists(kaggle_model_path):
+        st.error("Failed to download models from Kaggle Hub. Please check your internet connection and Kaggle credentials.")
+        st.stop()
+
+    # Construct paths to the models within the downloaded directory
+    layout_detection_dir = os.path.join(kaggle_model_path, "models/layout_detection")
+    text_detection_dir = os.path.join(kaggle_model_path, "models/text_detection")
+    text_recognition_dir = os.path.join(kaggle_model_path, "models/text_recognition")
+
+    # Verify that the model directories exist
+    if not all(os.path.exists(p) for p in [layout_detection_dir, text_detection_dir, text_recognition_dir]):
+        st.error(f"Model directories not found after download. Please check the structure of the downloaded model files in '{kaggle_model_path}'.")
+        st.stop()
         
     return layout_detection_dir, text_detection_dir, text_recognition_dir
 
