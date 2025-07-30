@@ -1,4 +1,3 @@
-
 import streamlit as st
 
 # Set page config for fullscreen (wide) layout
@@ -26,19 +25,12 @@ def download_models_from_kaggle():
     except Exception as e:
         return None
 
-layout_detection_dir = "models/layout_detection"
-text_detection_dir = "models/text_detection"
-text_recognition_dir = "models/text_recognition"
-
-# Load model once
-@st.cache_resource
-def load_model():
-    # model_name = "PP-DocLayout_plus-L"
-    # model_dir = "model"
-    # model = create_model(model_name=model_name, model_dir=model_dir, device="cpu")
-    st.session_state.kaggle_model_path = download_models_from_kaggle()
-    # Check if Kaggle models are available
-    kaggle_model_path = getattr(st.session_state, 'kaggle_model_path', None)
+def get_model_paths():
+    """Download models if not already downloaded and return the paths."""
+    if 'kaggle_model_path' not in st.session_state:
+        st.session_state.kaggle_model_path = download_models_from_kaggle()
+    
+    kaggle_model_path = st.session_state.kaggle_model_path
     
     if kaggle_model_path and os.path.exists(kaggle_model_path):
         # You may need to adjust these paths based on the structure of the downloaded models
@@ -50,8 +42,10 @@ def load_model():
         layout_detection_dir = "models/layout_detection"
         text_detection_dir = "models/text_detection"
         text_recognition_dir = "models/text_recognition"
+        
+    return layout_detection_dir, text_detection_dir, text_recognition_dir
 
-load_model()
+layout_detection_dir, text_detection_dir, text_recognition_dir = get_model_paths()
 
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
