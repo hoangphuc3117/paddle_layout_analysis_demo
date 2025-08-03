@@ -142,7 +142,7 @@ if uploaded_file is not None:
         with col1:
             st.markdown("**Original Text**")
             for i, layout_data in enumerate(summary, 1):
-                st.subheader(f"{layout_data['layout_label'].upper()}")
+                st.subheader(f"{layout_data['label_han_with_english']}")
                 # Use markdown with container for auto-height
                 with st.container():
                     st.markdown(
@@ -153,7 +153,7 @@ if uploaded_file is not None:
         with col2:
             st.markdown("**Transliteration**")
             for i, layout_data in enumerate(summary, 1):
-                st.subheader(f"{layout_data['layout_label'].upper()}")
+                st.subheader(f"{layout_data['label_han_viet']}")
                 with st.container():
                     st.markdown(
                         f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 6px; border: 1px solid #e6e9ef; min-height: 60px; word-wrap: break-word; white-space: pre-wrap;">{layout_data["transcribed_combined"]}</div>',
@@ -163,7 +163,7 @@ if uploaded_file is not None:
         with col3:
             st.markdown("**Prose Translation**")
             for i, layout_data in enumerate(summary, 1):
-                st.subheader(f"{layout_data['layout_label'].upper()}")
+                st.subheader(f"{layout_data['label_pure_vietnamese']}")
                 with st.container():
                     st.markdown(
                         f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 6px; border: 1px solid #e6e9ef; min-height: 60px; word-wrap: break-word; white-space: pre-wrap;">{layout_data["prose_combined"]}</div>',

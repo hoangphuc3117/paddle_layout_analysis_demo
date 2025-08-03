@@ -1,8 +1,64 @@
 import requests
 from utils import BASE_API_URL
 
+# Dictionary for layout label translations
+LAYOUT_LABEL_TRANSLATIONS = {
+    'compiler': {
+        'han_text': '編者 (Compiler)',
+        'han_viet': 'Biên giả', 
+        'pure_vietnamese': 'Người biên tập'
+    },
+    'author': {
+        'han_text': '作者 (Author)',
+        'han_viet': 'Tác giả',
+        'pure_vietnamese': 'Tác giả'
+    },
+    'text': {
+        'han_text': '正文 (Text)',
+        'han_viet': 'Chính văn',
+        'pure_vietnamese': 'Nội dung chính'
+    },
+    'section title': {
+        'han_text': '節名 (Section title)',
+        'han_viet': 'Điều mục',
+        'pure_vietnamese': 'Tên đoạn'
+    },
+    'chapter title': {
+        'han_text': '編者 (Chapter title)',
+        'han_viet': 'Quyển thủ',
+        'pure_vietnamese': 'Tên chương'
+    },
+    'subtitle': {
+        'han_text': '副題 (Subtitle)',
+        'han_viet': 'Đề phụ',
+        'pure_vietnamese': 'Tựa nhỏ'
+    },
+    'centerfold strip': {
+        'han_text': '魂骨條 (Centerfold strip)',
+        'han_viet': 'Hồn cốt điều',
+        'pure_vietnamese': 'Gáy sách'
+    }
+}
+
+def get_layout_translations(label):
+    """Get translations for layout label"""
+    label_lower = label.lower()
+    if label_lower in LAYOUT_LABEL_TRANSLATIONS:
+        trans = LAYOUT_LABEL_TRANSLATIONS[label_lower]
+        return {
+            'han_with_english': f"{trans['han_text']}",
+            'han_viet': trans['han_viet'],
+            'pure_vietnamese': trans['pure_vietnamese']
+        }
+    else:
+        # Default fallback if translation not found
+        return {
+            'han_with_english': f"({label_lower})",
+            'han_viet': label,
+            'pure_vietnamese': label
+        }
+
 def _has_intersection(ocr_box, layout_box):
-    """Check if two bounding boxes have any intersection"""
     ocr_x1, ocr_y1, ocr_x2, ocr_y2 = ocr_box
     layout_x1, layout_y1, layout_x2, layout_y2 = layout_box
     
@@ -11,23 +67,7 @@ def _has_intersection(ocr_box, layout_box):
         return False
     return True
 
-# IMPROVED MAPPING FUNCTION - XỬ LÝ NHIỀU LAYOUT CÙNG LOẠI
 def map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_data, transliteration_data, prose_translation_data):
-    """
-    Map layout detection results with OCR text, transliteration, and prose translation data
-    IMPROVED VERSION: Handles multiple layouts of the same type (e.g., multiple bibliography boxes)
-    
-    Args:
-        layout_det_res: Layout detection results
-        ocr_result_data: OCR results from API
-        transliteration_data: Transliteration results from API
-        prose_translation_data: Prose translation results from API
-        
-    Returns:
-        dict: Comprehensive mapping with unique keys for each layout box
-    """
-    
-    # Extract layout boxes (exclude page box) with unique identifiers
     layout_boxes = []
     label_counts = {}  # Track count of each label type
     
@@ -133,25 +173,15 @@ def map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_dat
     
     return layout_mapping
 
-def sort_ocr_by_text_order(ocr_results):
-    """Sort OCR results by their original text order index"""
-    return sorted(ocr_results, key=lambda x: x['text_order_index'] if x['text_order_index'] != -1 else float('inf'))
-
 def process_layout_ocr_mapping(layout_det_res, ocr_result_data, transliteration_data, prose_translation_data):
-    """
-    Complete processing: map layout -> OCR -> transliteration -> prose translation
-    Returns organized results by layout regions
-    Uses the improved mapping function for better handling of multiple layouts
-    """
     return map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_data, transliteration_data, prose_translation_data)
 
 def create_improved_prose_layout_summary(mapping_result):
-    """Create a summary of all text types organized by layout, maintaining original OCR text order"""
     summary = []
     
     for unique_label, data in mapping_result.items():
-        # Sort OCR results by original OCR text order
-        sorted_ocr_results = sort_ocr_by_text_order(data['ocr_results'])
+        # Sort OCR results by original OCR text order (result_ocr_text)
+        sorted_ocr_results = sorted(data['ocr_results'], key=lambda x: x['text_order_index'] if x['text_order_index'] != -1 else float('inf'))
         
         original_texts = []
         transcribed_texts = []
@@ -162,12 +192,18 @@ def create_improved_prose_layout_summary(mapping_result):
             transcribed_texts.append(ocr_item['transcription'])
             prose_texts.append(ocr_item['prose_translation'])
         
+        # Get layout label translations
+        label_translations = get_layout_translations(data['original_label'])
+        
         # Get the minimum text order index for this layout to determine overall order
         min_text_order_index = min([item['text_order_index'] for item in data['ocr_results']]) if data['ocr_results'] else float('inf')
         
         summary.append({
             'layout_label': unique_label,
             'original_label': data['original_label'],
+            'label_han_with_english': label_translations['han_with_english'],
+            'label_han_viet': label_translations['han_viet'],
+            'label_pure_vietnamese': label_translations['pure_vietnamese'],
             'original_combined': ' '.join(original_texts),
             'transcribed_combined': ' '.join(transcribed_texts),
             'prose_combined': ' '.join(prose_texts),
