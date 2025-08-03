@@ -2,7 +2,7 @@ import streamlit as st
 
 # Set page config for fullscreen (wide) layout
 st.set_page_config(page_title="PP-Structure V3 Demo", layout="wide")
-from paddleocr import PPStructureV3
+from paddlex import create_model
 import os
 import json
 import cv2
@@ -68,37 +68,23 @@ if uploaded_file is not None:
             return {'status': 'error', 'error': str(e)}
     
     def model_prediction_task():
-        try:
-            model = PPStructureV3(
-                use_doc_orientation_classify=True,
-                use_doc_unwarping=False,
-                layout_detection_model_name="PP-DocLayout-L",
-                layout_detection_model_dir=layout_detection_dir,
-                text_detection_model_name="PP-OCRv5_server_det",
-                text_detection_model_dir=text_detection_dir,
-                text_recognition_model_name="PP-OCRv5_server_rec",
-                text_recognition_model_dir=text_recognition_dir,
-                use_table_recognition=False,
-                use_seal_recognition=False,
-                use_chart_recognition=False,
-                use_formula_recognition=False,
-            )
-            output = model.predict(img_np, batch_size=1, layout_nms=True)
-            
-            output_dir = "output"
-            if os.path.exists(output_dir):
-                shutil.rmtree(output_dir)
-            os.makedirs(output_dir, exist_ok=True)
+        # try:
+        model_name = "PP-DocLayout-L"
+        model = create_model(model_name=model_name, model_dir=layout_detection_dir)
+        output = model.predict(img_np, batch_size=1, layout_nms=True)
+        
+        output_dir = "output"
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
-            for res in output:
-                res.save_to_img(output_dir)
-
-            # Extract layout detection results
-            layout_det_res = output[0]['layout_det_res'].json
-            
-            return {'layout_det_res': layout_det_res, 'status': 'success'}
-        except Exception as e:
-            return {'status': 'error', 'error': str(e)}
+        for res in output:
+            res.save_to_img(output_dir)
+            layout_det_res = res.json
+        
+        return {'layout_det_res': layout_det_res, 'status': 'success'}
+        # except Exception as e:
+        #     return {'status': 'error', 'error': str(e)}
 
     # Run both tasks in parallel
     with st.spinner('Processing... Please wait while we analyze your image and call APIs.'):
@@ -139,9 +125,9 @@ if uploaded_file is not None:
         with col2:
             st.subheader("Layout detection")
             # Find all images containing "det_res" in output folder
-            output_images = glob.glob(os.path.join("output", "*layout_det_res*.jpg")) + \
-                           glob.glob(os.path.join("output", "*layout_det_res*.png")) + \
-                           glob.glob(os.path.join("output", "*layout_det_res*.jpeg"))
+            output_images = glob.glob(os.path.join("output", "*res*.jpg")) + \
+                           glob.glob(os.path.join("output", "*res*.png")) + \
+                           glob.glob(os.path.join("output", "*res*.jpeg"))
             
             if output_images:
                 for img_path in sorted(output_images):
