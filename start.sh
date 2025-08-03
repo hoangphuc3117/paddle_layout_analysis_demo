@@ -21,14 +21,7 @@ export DISPLAY=:99
 mkdir -p output
 
 # Start Streamlit
-# streamlit run web_demo.py \
-#     --server.port=$PORT \
-#     --server.address=0.0.0.0 \
-#     --server.headless=true \
-#     --server.fileWatcherType=none \
-#     --browser.gatherUsageStats=false
-
-streamlit run web_demo_paddlex \
+streamlit run web_demo.py \
     --server.port=$PORT \
     --server.address=0.0.0.0 \
     --server.headless=true \
