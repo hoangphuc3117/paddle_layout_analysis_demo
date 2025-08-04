@@ -58,16 +58,75 @@ def get_layout_translations(label):
             'pure_vietnamese': label
         }
 
-def _has_intersection(ocr_box, layout_box):
+def _has_intersection(ocr_box, layout_box, min_overlap_threshold=0.5):
+    """
+    Check if two bounding boxes have significant intersection based on Overlap Ratio
+    
+    Args:
+        ocr_box: [x1, y1, x2, y2] coordinates of OCR text box
+        layout_box: [x1, y1, x2, y2] coordinates of layout box
+        min_overlap_threshold: Minimum overlap ratio threshold (default: 0.5 = 50% of OCR box must be covered)
+    
+    Returns:
+        bool: True if overlap ratio exceeds threshold, False otherwise
+    """
     ocr_x1, ocr_y1, ocr_x2, ocr_y2 = ocr_box
     layout_x1, layout_y1, layout_x2, layout_y2 = layout_box
     
+    # Check for no intersection first (quick exit)
     if (ocr_x2 <= layout_x1 or ocr_x1 >= layout_x2 or 
         ocr_y2 <= layout_y1 or ocr_y1 >= layout_y2):
         return False
-    return True
+    
+    # Calculate intersection area
+    intersection_x1 = max(ocr_x1, layout_x1)
+    intersection_y1 = max(ocr_y1, layout_y1)
+    intersection_x2 = min(ocr_x2, layout_x2)
+    intersection_y2 = min(ocr_y2, layout_y2)
+    
+    intersection_area = (intersection_x2 - intersection_x1) * (intersection_y2 - intersection_y1)
+    
+    # Calculate OCR box area
+    ocr_area = (ocr_x2 - ocr_x1) * (ocr_y2 - ocr_y1)
+    
+    # Avoid division by zero
+    if ocr_area <= 0:
+        return False
+    
+    # Calculate overlap ratio (what percentage of OCR box is covered by layout box)
+    overlap_ratio = intersection_area / ocr_area
+    
+    # Primary check: overlap ratio exceeds threshold
+    if overlap_ratio >= min_overlap_threshold:
+        return True
+    
+    # Secondary check: If overlap ratio < 50%, check if OCR center is inside layout
+    if overlap_ratio < 0.5:
+        # Calculate OCR center point
+        ocr_center_x = (ocr_x1 + ocr_x2) / 2
+        ocr_center_y = (ocr_y1 + ocr_y2) / 2
+        
+        # Check if center point is inside layout box
+        center_inside = (layout_x1 <= ocr_center_x <= layout_x2 and 
+                        layout_y1 <= ocr_center_y <= layout_y2)
+        
+        return center_inside
+    
+    # If overlap ratio >= 50% but < threshold, reject
+    return False
 
-def map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_data, transliteration_data, prose_translation_data):
+def map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_data, transliteration_data, prose_translation_data, min_overlap_threshold=0.5):
+    """
+    Map layout detection results with OCR text, transliteration, and prose translation data
+    IMPROVED VERSION: Handles multiple layouts of the same type with unique keys and overlap ratio-based intersection
+    
+    Args:
+        layout_det_res: Layout detection results
+        ocr_result_data: OCR results with bounding boxes
+        transliteration_data: Transliteration results
+        prose_translation_data: Prose translation results
+        min_overlap_threshold: Minimum overlap ratio threshold for text-to-layout assignment (default: 0.5)
+    """
     layout_boxes = []
     label_counts = {}  # Track count of each label type
     
@@ -135,11 +194,12 @@ def map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_dat
         unique_label = layout['unique_label']
         layout_bbox = layout['bbox']
         
-        # Find OCR texts that intersect with this layout
+        # Find OCR texts that have significant intersection with this layout
         intersecting_ocr = []
         
         for ocr in ocr_texts:
-            if _has_intersection(ocr['bbox'], layout_bbox):
+            # Use improved intersection function with overlap ratio threshold
+            if _has_intersection(ocr['bbox'], layout_bbox, min_overlap_threshold):
                 # Find corresponding transliteration and prose translation
                 original_text = ocr['text']
                 transcription = ""
@@ -154,13 +214,27 @@ def map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_dat
                             prose_translation = prose_translations[j]
                         break
                 
+                # Calculate overlap ratio for debugging/analysis
+                ocr_x1, ocr_y1, ocr_x2, ocr_y2 = ocr['bbox']
+                layout_x1, layout_y1, layout_x2, layout_y2 = layout_bbox
+                
+                intersection_x1 = max(ocr_x1, layout_x1)
+                intersection_y1 = max(ocr_y1, layout_y1)
+                intersection_x2 = min(ocr_x2, layout_x2)
+                intersection_y2 = min(ocr_y2, layout_y2)
+                
+                intersection_area = (intersection_x2 - intersection_x1) * (intersection_y2 - intersection_y1)
+                ocr_area = (ocr_x2 - ocr_x1) * (ocr_y2 - ocr_y1)
+                overlap_ratio = intersection_area / ocr_area if ocr_area > 0 else 0
+                
                 intersecting_ocr.append({
                     'original_text': original_text,
                     'transcription': transcription,
                     'prose_translation': prose_translation,
                     'bbox': ocr['bbox'],
                     'confidence': ocr['confidence'],
-                    'text_order_index': ocr['text_order_index']
+                    'text_order_index': ocr['text_order_index'],
+                    'overlap_ratio': overlap_ratio  # For debugging/analysis
                 })
         
         layout_mapping[unique_label] = {
@@ -173,8 +247,18 @@ def map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_dat
     
     return layout_mapping
 
-def process_layout_ocr_mapping(layout_det_res, ocr_result_data, transliteration_data, prose_translation_data):
-    return map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_data, transliteration_data, prose_translation_data)
+def process_layout_ocr_mapping(layout_det_res, ocr_result_data, transliteration_data, prose_translation_data, min_overlap_threshold=0.5):
+    """
+    Simple wrapper function for layout-OCR mapping
+    
+    Args:
+        layout_det_res: Layout detection results
+        ocr_result_data: OCR results
+        transliteration_data: Transliteration results  
+        prose_translation_data: Prose translation results
+        min_overlap_threshold: Minimum overlap ratio threshold for text-to-layout assignment (default: 0.5)
+    """
+    return map_layout_ocr_transliteration_prose_improved(layout_det_res, ocr_result_data, transliteration_data, prose_translation_data, min_overlap_threshold)
 
 def create_improved_prose_layout_summary(mapping_result):
     summary = []
@@ -195,6 +279,11 @@ def create_improved_prose_layout_summary(mapping_result):
         # Get layout label translations
         label_translations = get_layout_translations(data['original_label'])
         
+        # Calculate average overlap ratio for this layout (for compatibility with notebook)
+        avg_overlap = 0
+        if data['ocr_results']:
+            avg_overlap = sum(item.get('overlap_ratio', 0) for item in data['ocr_results']) / len(data['ocr_results'])
+        
         # Get the minimum text order index for this layout to determine overall order
         min_text_order_index = min([item['text_order_index'] for item in data['ocr_results']]) if data['ocr_results'] else float('inf')
         
@@ -208,7 +297,10 @@ def create_improved_prose_layout_summary(mapping_result):
             'transcribed_combined': ' '.join(transcribed_texts),
             'prose_combined': ' '.join(prose_texts),
             'min_text_order_index': min_text_order_index,
-            'box_index': data['box_index']
+            'box_index': data['box_index'],
+            'avg_overlap': avg_overlap,  # For analysis
+            'avg_iou': avg_overlap,  # For backward compatibility with notebook and analysis 
+            'text_count': len(data['ocr_results'])  # Number of texts assigned
         })
     
     # Sort the entire summary by the minimum text order index of each layout
@@ -223,3 +315,93 @@ def create_improved_prose_layout_summary(mapping_result):
 def create_layout_summary(mapping_result):
     """Create organized summary by layout regions - uses improved version"""
     return create_improved_prose_layout_summary(mapping_result)
+
+def analyze_overlap_statistics(mapping_result):
+    """
+    Analyze overlap ratio statistics from mapping results
+    
+    Args:
+        mapping_result: Results from map_layout_ocr_transliteration_prose_improved
+    
+    Returns:
+        dict: Overlap ratio statistics including overall and per-layout analysis
+    """
+    all_overlaps = []
+    layout_stats = {}
+    
+    # Collect all overlap ratio values
+    for layout_label, data in mapping_result.items():
+        overlaps = [item.get('overlap_ratio', 0) for item in data['ocr_results']]
+        all_overlaps.extend(overlaps)
+        
+        if overlaps:
+            layout_stats[layout_label] = {
+                'count': len(overlaps),
+                'min': min(overlaps),
+                'max': max(overlaps),
+                'avg': sum(overlaps) / len(overlaps)
+            }
+    
+    overall_stats = {}
+    if all_overlaps:
+        overall_stats = {
+            'total_texts': len(all_overlaps),
+            'avg_overlap': sum(all_overlaps) / len(all_overlaps),
+            'min_overlap': min(all_overlaps),
+            'max_overlap': max(all_overlaps),
+            'distribution': {
+                'low_overlap_count': sum(1 for x in all_overlaps if x < 0.3),
+                'medium_overlap_count': sum(1 for x in all_overlaps if 0.3 <= x < 0.7),
+                'high_overlap_count': sum(1 for x in all_overlaps if x >= 0.7)
+            }
+        }
+        
+        # Add percentages
+        total = overall_stats['total_texts']
+        overall_stats['distribution']['low_overlap_pct'] = overall_stats['distribution']['low_overlap_count'] / total * 100
+        overall_stats['distribution']['medium_overlap_pct'] = overall_stats['distribution']['medium_overlap_count'] / total * 100
+        overall_stats['distribution']['high_overlap_pct'] = overall_stats['distribution']['high_overlap_count'] / total * 100
+    
+    return {
+        'overall': overall_stats,
+        'by_layout': layout_stats
+    }
+
+def suggest_overlap_threshold(mapping_result):
+    """
+    Suggest optimal overlap ratio threshold based on data distribution
+    
+    Args:
+        mapping_result: Results from map_layout_ocr_transliteration_prose_improved
+    
+    Returns:
+        dict: Suggested thresholds and reasoning
+    """
+    stats = analyze_overlap_statistics(mapping_result)
+    
+    if not stats['overall']:
+        return {'suggestion': 0.5, 'reason': 'No data available, using default'}
+    
+    avg_overlap = stats['overall']['avg_overlap']
+    min_overlap = stats['overall']['min_overlap']
+    
+    # Suggest threshold based on average overlap ratio
+    if avg_overlap >= 0.8:
+        suggestion = 0.7
+        reason = 'High average overlap detected, strict threshold recommended'
+    elif avg_overlap >= 0.6:
+        suggestion = 0.5
+        reason = 'Moderate average overlap, default threshold appropriate'
+    else:
+        suggestion = 0.3
+        reason = 'Low average overlap, lenient threshold recommended'
+    
+    return {
+        'suggestion': suggestion,
+        'reason': reason,
+        'stats_summary': {
+            'avg_overlap': avg_overlap,
+            'min_overlap': min_overlap,
+            'total_texts': stats['overall']['total_texts']
+        }
+    }

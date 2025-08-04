@@ -18,6 +18,22 @@ st.title("PP-Structure V3 Demo")
 
 layout_detection_dir, text_detection_dir, text_recognition_dir = get_model_paths()
 
+# Add Overlap Ratio threshold configuration
+st.sidebar.header("⚙️ Configuration")
+min_overlap_threshold = st.sidebar.slider(
+    "Minimum Overlap Ratio Threshold",
+    min_value=0.0,
+    max_value=1.0,
+    value=0.5,
+    step=0.05,
+    help="Minimum overlap ratio threshold for text-to-layout assignment. Higher values require more OCR text coverage within layout."
+)
+
+st.sidebar.markdown(f"**Current Overlap Ratio threshold:** {min_overlap_threshold:.2f}")
+st.sidebar.markdown("- **0.0-0.3**: Very permissive (allows minimal OCR text coverage)")
+st.sidebar.markdown("- **0.3-0.7**: Moderate coverage required")
+st.sidebar.markdown("- **0.7+**: High coverage required (most of OCR text must be within layout)")
+
 uploaded_file = st.file_uploader("Upload an image for layout inference", type=["jpg", "jpeg", "png"])
 
 if 'last_file' not in st.session_state:
@@ -111,12 +127,13 @@ if uploaded_file is not None:
 
     # Process results if both succeeded
     if api_result['status'] == 'success' and model_result['status'] == 'success':
-        # Process mapping
+        # Process mapping with configurable overlap ratio threshold
         mapping_result = process_layout_ocr_mapping(
             model_result['layout_det_res'],
             api_result['ocr_data'],
             api_result['transliteration_data'],
-            api_result['prose_data']
+            api_result['prose_data'],
+            min_overlap_threshold=min_overlap_threshold
         )
         
         # Create summary
@@ -124,6 +141,30 @@ if uploaded_file is not None:
         
         # Display results
         st.success("Processing completed successfully!")
+        
+        # Display Overlap Ratio statistics
+        st.info(f"🔍 **Overlap Ratio Analysis** (threshold: {min_overlap_threshold:.2f})")
+        total_texts = sum(len(data['ocr_results']) for data in mapping_result.values())
+        if total_texts > 0:
+            all_overlaps = []
+            for data in mapping_result.values():
+                all_overlaps.extend([item.get('overlap_ratio', 0) for item in data['ocr_results']])
+            
+            avg_overlap = sum(all_overlaps) / len(all_overlaps) if all_overlaps else 0
+            min_overlap = min(all_overlaps) if all_overlaps else 0
+            max_overlap = max(all_overlaps) if all_overlaps else 0
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Texts Assigned", total_texts)
+            with col2:
+                st.metric("Average Overlap", f"{avg_overlap:.3f}")
+            with col3:
+                st.metric("Min Overlap", f"{min_overlap:.3f}")
+            with col4:
+                st.metric("Max Overlap", f"{max_overlap:.3f}")
+        else:
+            st.warning("⚠️ No texts were assigned to layouts with the current overlap ratio threshold. Consider lowering the threshold.")
 
         # Display images
         import glob

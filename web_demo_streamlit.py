@@ -9,12 +9,134 @@ import cv2
 import numpy as np
 import concurrent.futures
 import shutil
+from PIL import Image, ImageDraw, ImageFont
+import random
 
 # Import utility functions
 from utils import get_model_paths, upload_image_to_server, image_ocr, sinonom_transliteration, sinonom_prose_translation
 from processing import process_layout_ocr_mapping, create_layout_summary
 
-st.title("PP-Structure V3 Demo")
+def draw_ocr_bboxes(image, ocr_data, mapping_result=None, show_text_labels=False, show_confidence=False):
+    """
+    Vẽ bounding boxes của OCR lên hình ảnh
+    
+    Args:
+        image: PIL Image hoặc numpy array
+        ocr_data: Dữ liệu OCR từ API
+        mapping_result: Kết quả mapping (optional) để phân màu theo layout
+        show_text_labels: Hiển thị text labels
+        show_confidence: Hiển thị confidence scores
+    
+    Returns:
+        PIL Image với bounding boxes được vẽ
+    """
+    # Convert to PIL Image if needed
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    else:
+        image = image.copy()
+    
+    draw = ImageDraw.Draw(image)
+    
+    # Tạo mapping từ text đến layout label nếu có mapping_result
+    text_to_layout = {}
+    layout_colors = {}
+    if mapping_result:
+        color_palette = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+            '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43'
+        ]
+        
+        for i, (layout_label, data) in enumerate(mapping_result.items()):
+            color = color_palette[i % len(color_palette)]
+            layout_colors[layout_label] = color
+            
+            for ocr_item in data['ocr_results']:
+                text_to_layout[ocr_item['original_text']] = layout_label
+    
+    # Vẽ bounding boxes
+    for bbox_info in ocr_data['data']['result_bbox']:
+        bbox_coords = bbox_info[0]  # [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
+        text = bbox_info[1][0]
+        confidence = bbox_info[1][1]
+        
+        # Convert 4-point bbox to rectangle coordinates
+        x_coords = [point[0] for point in bbox_coords]
+        y_coords = [point[1] for point in bbox_coords]
+        x1, y1, x2, y2 = min(x_coords), min(y_coords), max(x_coords), max(y_coords)
+        
+        # Chọn màu dựa trên layout mapping
+        if text in text_to_layout:
+            layout_label = text_to_layout[text]
+            color = layout_colors[layout_label]
+            thickness = 3
+        else:
+            color = '#FF0000'  # Đỏ cho text không được assign
+            thickness = 2
+        
+        # Vẽ bounding box
+        draw.rectangle([x1, y1, x2, y2], outline=color, width=thickness)
+        
+        # Vẽ text label và confidence (tùy chọn)
+        if show_text_labels or show_confidence:
+            try:
+                # Cố gắng load font, nếu không được thì dùng default
+                font = ImageFont.truetype("arial.ttf", 10)
+            except:
+                font = ImageFont.load_default()
+            
+            # Tạo label text
+            label_parts = []
+            if show_text_labels and len(text) < 20:  # Chỉ hiển thị text ngắn
+                label_parts.append(text)
+            if show_confidence:
+                label_parts.append(f"({confidence:.2f})")
+            
+            if label_parts:
+                label_text = " ".join(label_parts)
+                
+                # Vẽ background cho text
+                text_bbox = draw.textbbox((x1, max(0, y1-15)), label_text, font=font)
+                draw.rectangle(text_bbox, fill=color, outline=color)
+                draw.text((x1, max(0, y1-15)), label_text, fill='white', font=font)
+    
+    return image
+
+def create_legend(mapping_result):
+    """
+    Tạo legend cho các màu layout
+    """
+    if not mapping_result:
+        return ""
+    
+    color_palette = [
+        '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
+        '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43'
+    ]
+    
+    legend_html = "<div style='padding: 10px; background-color: #f0f2f6; border-radius: 6px;'>"
+    legend_html += "<h4>Layout Color Legend:</h4>"
+    
+    for i, (layout_label, data) in enumerate(mapping_result.items()):
+        color = color_palette[i % len(color_palette)]
+        text_count = len(data['ocr_results'])
+        legend_html += f"<div style='margin: 5px 0;'>"
+        legend_html += f"<span style='display: inline-block; width: 20px; height: 15px; background-color: {color}; border: 1px solid #ccc; margin-right: 8px;'></span>"
+        legend_html += f"<strong>{layout_label}</strong> ({text_count} texts)"
+        legend_html += f"</div>"
+    
+    legend_html += "<div style='margin: 5px 0;'>"
+    legend_html += f"<span style='display: inline-block; width: 20px; height: 15px; background-color: #FF0000; border: 1px solid #ccc; margin-right: 8px;'></span>"
+    legend_html += f"<strong>Unassigned texts</strong>"
+    legend_html += f"</div>"
+    
+    legend_html += "</div>"
+    return legend_html
+
+st.title("Layout Detection Demo (Thông thường, Hán, Dọc, In)")
+
+# Add Overlap Ratio threshold configuration
+min_overlap_threshold = 0.5
 
 layout_detection_dir, text_detection_dir, text_recognition_dir = get_model_paths()
 
@@ -97,12 +219,13 @@ if uploaded_file is not None:
 
     # Process results if both succeeded
     if api_result['status'] == 'success' and model_result['status'] == 'success':
-        # Process mapping
+        # Process mapping with configurable overlap ratio threshold
         mapping_result = process_layout_ocr_mapping(
             model_result['layout_det_res'],
             api_result['ocr_data'],
             api_result['transliteration_data'],
-            api_result['prose_data']
+            api_result['prose_data'],
+            min_overlap_threshold=min_overlap_threshold
         )
         
         # Create summary
@@ -110,20 +233,34 @@ if uploaded_file is not None:
         
         # Display results
         st.success("Processing completed successfully!")
+        
+        # Create OCR visualization
+        ocr_image = draw_ocr_bboxes(
+            img_np, 
+            api_result['ocr_data'], 
+            mapping_result,
+            show_text_labels=True,
+            show_confidence=False
+        )
 
         # Display images
         import glob
         
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         
         # Display original image
         with col1:
             st.subheader("Original Image")
             st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
         
-        # Display detection result images
+        # Display OCR bounding boxes
         with col2:
-            st.subheader("Layout detection")
+            st.subheader("OCR Bounding Boxes")
+            st.image(ocr_image, caption="OCR Detection with Layout Assignment", use_container_width=True)
+        
+        # Display detection result images
+        with col3:
+            st.subheader("Layout Detection")
             # Find all images containing "det_res" in output folder
             output_images = glob.glob(os.path.join("output", "*res*.jpg")) + \
                            glob.glob(os.path.join("output", "*res*.png")) + \
@@ -135,12 +272,12 @@ if uploaded_file is not None:
                     st.image(img_path, caption=f"Result: {img_name}", use_container_width=True)
 
         # Display results by layout
-        st.subheader("📋 Results by Layout Regions")
+        st.subheader("📋 Kết quả")
 
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.markdown("**Original Text**")
+            st.markdown("**Chữ Hán**")
             for i, layout_data in enumerate(summary, 1):
                 st.subheader(f"{layout_data['label_han_with_english']}")
                 # Use markdown with container for auto-height
@@ -151,7 +288,7 @@ if uploaded_file is not None:
                     )
         
         with col2:
-            st.markdown("**Transliteration**")
+            st.markdown("**Dịch âm**")
             for i, layout_data in enumerate(summary, 1):
                 st.subheader(f"{layout_data['label_han_viet']}")
                 with st.container():
@@ -161,7 +298,7 @@ if uploaded_file is not None:
                     )
         
         with col3:
-            st.markdown("**Prose Translation**")
+            st.markdown("**Dịch nghĩa**")
             for i, layout_data in enumerate(summary, 1):
                 st.subheader(f"{layout_data['label_pure_vietnamese']}")
                 with st.container():
