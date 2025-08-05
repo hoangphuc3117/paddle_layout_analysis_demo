@@ -117,6 +117,16 @@ LAYOUT_LABEL_TRANSLATIONS = {
         'han_text': '卷號 (Volume number)',
         'han_viet': 'Quyển thứ',
         'pure_vietnamese': 'Số thứ tự quyển'
+    },
+    'foliation': {
+        'han_text': '页码 (Foliation)',
+        'han_viet': 'Diệp mã',
+        'pure_vietnamese': 'Số trang',
+    },
+    'volumn number': {
+        'han_text': '卷號 (Volume number)',
+        'han_viet': 'Quyển thứ',
+        'pure_vietnamese': 'Số thứ tự quyển'
     }
 }
 
