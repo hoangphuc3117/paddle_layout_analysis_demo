@@ -274,38 +274,50 @@ if uploaded_file is not None:
         # Display results by layout
         st.subheader("📋 Kết quả")
 
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown("**Chữ Hán**")
-            for i, layout_data in enumerate(summary, 1):
+        # Display each layout as a separate section with 3 columns
+        for i, layout_data in enumerate(summary, 1):
+            # Create 3 columns for this layout
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
                 st.subheader(f"{layout_data['label_han_with_english']}")
-                # Use markdown with container for auto-height
-                with st.container():
-                    st.markdown(
-                        f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 6px; border: 1px solid #e6e9ef; min-height: 60px; word-wrap: break-word; white-space: pre-wrap;">{layout_data["original_combined"]}</div>',
-                        unsafe_allow_html=True
-                    )
-        
-        with col2:
-            st.markdown("**Dịch âm**")
-            for i, layout_data in enumerate(summary, 1):
+                # Create list display for original texts
+                original_list_html = "<div style='background-color: #f0f2f6; padding: 12px; border-radius: 6px; border: 1px solid #e6e9ef; min-height: 60px;'>"
+                if layout_data.get('original_texts'):
+                    for idx, text in enumerate(layout_data['original_texts'], 1):
+                        original_list_html += f"<div style='margin-bottom: 8px; padding: 4px 0; border-bottom: 1px solid #ddd;'>{text}</div>"
+                else:
+                    original_list_html += f"<div>{layout_data['original_combined']}</div>"
+                original_list_html += "</div>"
+                st.markdown(original_list_html, unsafe_allow_html=True)
+            
+            with col2:
                 st.subheader(f"{layout_data['label_han_viet']}")
-                with st.container():
-                    st.markdown(
-                        f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 6px; border: 1px solid #e6e9ef; min-height: 60px; word-wrap: break-word; white-space: pre-wrap;">{layout_data["transcribed_combined"]}</div>',
-                        unsafe_allow_html=True
-                    )
-        
-        with col3:
-            st.markdown("**Dịch nghĩa**")
-            for i, layout_data in enumerate(summary, 1):
+                # Create list display for transcribed texts
+                transcribed_list_html = "<div style='background-color: #f0f2f6; padding: 12px; border-radius: 6px; border: 1px solid #e6e9ef; min-height: 60px;'>"
+                if layout_data.get('transcribed_texts'):
+                    for idx, text in enumerate(layout_data['transcribed_texts'], 1):
+                        transcribed_list_html += f"<div style='margin-bottom: 8px; padding: 4px 0; border-bottom: 1px solid #ddd;'>{text}</div>"
+                else:
+                    transcribed_list_html += f"<div>{layout_data['transcribed_combined']}</div>"
+                transcribed_list_html += "</div>"
+                st.markdown(transcribed_list_html, unsafe_allow_html=True)
+            
+            with col3:
                 st.subheader(f"{layout_data['label_pure_vietnamese']}")
-                with st.container():
-                    st.markdown(
-                        f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 6px; border: 1px solid #e6e9ef; min-height: 60px; word-wrap: break-word; white-space: pre-wrap;">{layout_data["prose_combined"]}</div>',
-                        unsafe_allow_html=True
-                    )
+                # Create list display for prose texts
+                prose_list_html = "<div style='background-color: #f0f2f6; padding: 12px; border-radius: 6px; border: 1px solid #e6e9ef; min-height: 60px;'>"
+                if layout_data.get('prose_texts'):
+                    for idx, text in enumerate(layout_data['prose_texts'], 1):
+                        prose_list_html += f"<div style='margin-bottom: 8px; padding: 4px 0; border-bottom: 1px solid #ddd;'>{text}</div>"
+                else:
+                    prose_list_html += f"<div>{layout_data['prose_combined']}</div>"
+                prose_list_html += "</div>"
+                st.markdown(prose_list_html, unsafe_allow_html=True)
+            
+            # Add separator between layouts except for the last one
+            if i < len(summary):
+                st.divider()
         
         st.divider()  # Add separator between layouts
         

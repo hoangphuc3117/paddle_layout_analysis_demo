@@ -296,6 +296,9 @@ def create_improved_prose_layout_summary(mapping_result):
             'original_combined': ' '.join(original_texts),
             'transcribed_combined': ' '.join(transcribed_texts),
             'prose_combined': ' '.join(prose_texts),
+            'original_texts': original_texts,  # List of individual texts
+            'transcribed_texts': transcribed_texts,  # List of individual texts
+            'prose_texts': prose_texts,  # List of individual texts
             'min_text_order_index': min_text_order_index,
             'box_index': data['box_index'],
             'avg_overlap': avg_overlap,  # For analysis
