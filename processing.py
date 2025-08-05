@@ -127,7 +127,11 @@ LAYOUT_LABEL_TRANSLATIONS = {
         'han_text': '卷號 (Volume number)',
         'han_viet': 'Quyển thứ',
         'pure_vietnamese': 'Số thứ tự quyển'
-    }
+    },
+    'eov': {
+        'han_text': '卷终 (End of volume)',
+        'han_viet': 'Quyển chung',
+        'pure_vietnamese': 'Kết thúc quyển'
 }
 
 def get_layout_translations(label):
