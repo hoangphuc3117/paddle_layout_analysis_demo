@@ -323,6 +323,7 @@ if uploaded_file is not None:
         
         # Raw data section (collapsible)
         with st.expander("Raw API Results", expanded=False):
+            # First row - OCR and Layout Detection
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("OCR Results")
@@ -330,6 +331,15 @@ if uploaded_file is not None:
             with col2:
                 st.subheader("Layout Detection")
                 st.json(model_result['layout_det_res'], expanded=False)
+            
+            # Second row - Transliteration and Prose Translation
+            col3, col4 = st.columns(2)
+            with col3:
+                st.subheader("Transliteration Results")
+                st.json(api_result['transliteration_data'], expanded=False)
+            with col4:
+                st.subheader("Prose Translation Results")
+                st.json(api_result['prose_data'], expanded=False)
     
     else:
         # Handle errors
