@@ -37,6 +37,86 @@ LAYOUT_LABEL_TRANSLATIONS = {
         'han_text': '魂骨條 (Centerfold strip)',
         'han_viet': 'Hồn cốt điều',
         'pure_vietnamese': 'Gáy sách'
+    },
+    'EOV':{
+        'han_text': '結尾 (End of Volume)',
+        'han_viet': 'kết vĩ',
+        'pure_vietnamese': 'Kết thúc quyển'
+    },
+    'bibliography':{
+        'han_text': '目录 (Bibliography)',
+        'han_viet': 'Mục lục',
+        'pure_vietnamese': 'Mục lục sách'
+    },
+    'book number':{
+        'han_text': '册号 (Book number)',
+        'han_viet': 'Sách hiệu',
+        'pure_vietnamese': 'Mã số sách'
+    },
+    'caption': {
+        'han_text': '图注 (Caption)',
+        'han_viet': 'đồ chú',
+        'pure_vietnamese': 'Ghi chú hình ảnh'
+    },
+    'colophon': {
+        'han_text': '牌记 (Colophon)',
+        'han_viet': 'Bài ký',
+        'pure_vietnamese': 'Ký hiệu đặc biệt'
+    },
+    'collation table': {
+        'han_text': '校勘表 (Collation table)',
+        'han_viet': 'Hiệu khám biểu',
+        'pure_vietnamese': 'Bảng hiệu đính'
+    },
+    'endnote': {
+        'han_text': '尾注 (Endnote)',
+        'han_viet': 'Vỹ chú',
+        'pure_vietnamese': 'Chú thích cuối'
+    },
+    'ear note': {
+        'han_text': '书耳 (Ear note)',
+        'han_viet': 'Thư nhĩ',
+        'pure_vietnamese': 'Ghi chú tai sách'
+    },
+    'engraver': {
+        'han_text': '刻工名字/刊刻者 (Engraver)',
+        'han_viet': 'Khắc công danh tự/San khắc giả',
+        'pure_vietnamese': 'Người khắc'
+    },
+    'figure': {
+        'han_text': '插图 (Figure)',
+        'han_viet': 'Sáp đồ',
+        'pure_vietnamese': 'Hình ảnh'
+    },
+    'header': {
+        'han_text': '书眉 (Header)',
+        'han_viet': 'Thư mi',
+        'pure_vietnamese': 'Tiêu đề đầu trang'
+    },
+    'interliner note': {
+        'han_text': '夹注 (Interliner note)',
+        'han_viet': 'Giáp chú',
+        'pure_vietnamese': 'Ghi chú giữa dòng'
+    },
+    'marginal annotation': {
+        'han_text': '邊註 (Marginal annotation)',
+        'han_viet': 'Chú thích lề',
+        'pure_vietnamese': 'Chú thích lề'
+    },
+    'sub section title': {
+        'han_text': '小节标题 (Sub section title)',
+        'han_viet': 'Tiểu tiết đề mục',
+        'pure_vietnamese': 'Tiêu đề tiểu đoạn'
+    },
+    'sutra number': {
+        'han_text': '经号 (Sutra number)',
+        'han_viet': 'Kinh hiệu',
+        'pure_vietnamese': 'Mã số kinh văn'
+    },
+    'volume number': {
+        'han_text': '卷號 (Volume number)',
+        'han_viet': 'Quyển thứ',
+        'pure_vietnamese': 'Số thứ tự quyển'
     }
 }
 
