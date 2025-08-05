@@ -132,6 +132,7 @@ LAYOUT_LABEL_TRANSLATIONS = {
         'han_text': '卷终 (End of volume)',
         'han_viet': 'Quyển chung',
         'pure_vietnamese': 'Kết thúc quyển'
+    }
 }
 
 def get_layout_translations(label):
