@@ -51,7 +51,7 @@ def draw_ocr_bboxes(image, ocr_data, mapping_result=None, show_text_labels=False
         
         draw = ImageDraw.Draw(image)
     except Exception as e:
-        st.error(f"Lỗi khi xử lý ảnh đầu vào}")
+        st.error(f"Lỗi khi xử lý ảnh đầu vào")
         return None
     
     try:
