@@ -417,7 +417,7 @@ if uploaded_file is not None:
                     return {
                         'layout_det_res': layout_det_res,  # Return original structure
                         'status': 'success_no_layout',
-                        'message': 'Không tìm thấy layout nào trong ảnh (chỉ có page box)'
+                        'message': 'Không tìm thấy layout nào trong ảnh'
                     }
             except Exception as e:
                 return {'status': 'error', 'error': f'Lỗi khi kiểm tra cấu trúc layout detection'}
@@ -474,7 +474,6 @@ if uploaded_file is not None:
     # Handle case where layout detection found no layouts
     if model_result['status'] == 'success_no_layout':
         st.warning("⚠️ " + model_result['message'])
-        st.info("Gợi ý: Thử với ảnh có layout rõ ràng hơn hoặc có cấu trúc văn bản.")
 
     # Process results if at least one succeeded
     if api_success and model_success and api_result['status'] == 'success' and model_result['status'] == 'success':
