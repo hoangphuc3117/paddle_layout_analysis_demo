@@ -697,4 +697,4 @@ if uploaded_file is not None:
             except Exception as e:
                 st.error(f"Không thể hiển thị kết quả layout")
         
-        st.warning("⚠️ Một số chức năng gặp lỗi. Vui lòng thử lại hoặc kiểm tra kết nối mạng.")
+        st.warning("⚠️ Một số chức năng gặp lỗi. Vui lòng thử lại.")
