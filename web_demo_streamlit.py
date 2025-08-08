@@ -420,8 +420,8 @@ if uploaded_file is not None:
                         'message': 'Không tìm thấy layout nào trong ảnh (chỉ có page box)'
                     }
             except Exception as e:
-                return {'status': 'error', 'error': f'Lỗi khi kiểm tra cấu trúc layout detection: {str(e)}'}
-        
+                return {'status': 'error', 'error': f'Lỗi khi kiểm tra cấu trúc layout detection'}
+
             return {'layout_det_res': layout_det_res, 'status': 'success'}
             
         except MemoryError:
