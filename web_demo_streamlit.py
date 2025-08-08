@@ -697,14 +697,5 @@ if uploaded_file is not None:
                         st.image(img_path, caption=f"Layout Detection: {img_name}", use_container_width=True)
             except Exception as e:
                 st.error(f"Không thể hiển thị kết quả layout")
-                
-        if api_success and api_result['status'] == 'success':
-            st.info("📋 Chỉ hiển thị kết quả OCR:")
-            try:
-                ocr_texts = api_result['ocr_data']['data']['result_ocr_text']
-                for i, text in enumerate(ocr_texts, 1):
-                    st.write(f"{i}. {text}")
-            except Exception as e:
-                st.error(f"Không thể hiển thị OCR text")
         
         st.warning("⚠️ Một số chức năng gặp lỗi. Vui lòng thử lại hoặc kiểm tra kết nối mạng.")
