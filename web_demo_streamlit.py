@@ -598,7 +598,7 @@ if uploaded_file is not None:
                         if i < len(summary):
                             st.divider()
                     except Exception as e:
-                        st.error(f"Lỗi khi hiển thị layout {i}}")
+                        st.error(f"Lỗi khi hiển thị layout {i}")
                         continue
                         
                 st.divider()  # Add separator between layouts
