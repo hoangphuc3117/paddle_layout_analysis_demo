@@ -395,13 +395,32 @@ if uploaded_file is not None:
             if layout_det_res is None:
                 return {'status': 'error', 'error': 'Không có kết quả layout detection'}
             
-            # Validate layout detection results
-            if not isinstance(layout_det_res, list) or len(layout_det_res) == 0:
-                return {
-                    'layout_det_res': [],
-                    'status': 'success_no_layout',
-                    'message': 'Không tìm thấy layout nào trong ảnh'
-                }
+            # Validate layout detection results structure
+            try:
+                if not isinstance(layout_det_res, dict):
+                    return {'status': 'error', 'error': 'Kết quả layout detection không đúng định dạng'}
+                
+                if 'res' not in layout_det_res:
+                    return {'status': 'error', 'error': 'Thiếu thông tin res trong kết quả layout detection'}
+                
+                if 'boxes' not in layout_det_res['res']:
+                    return {'status': 'error', 'error': 'Thiếu thông tin boxes trong kết quả layout detection'}
+                
+                layout_boxes = layout_det_res['res']['boxes']
+                if not isinstance(layout_boxes, list):
+                    return {'status': 'error', 'error': 'Danh sách boxes không đúng định dạng'}
+                
+                # Filter out page_box and check if there are any valid layouts
+                valid_layouts = [box for box in layout_boxes if box.get('label', '').lower() != 'page box']
+                
+                if len(valid_layouts) == 0:
+                    return {
+                        'layout_det_res': layout_det_res,  # Return original structure
+                        'status': 'success_no_layout',
+                        'message': 'Không tìm thấy layout nào trong ảnh (chỉ có page box)'
+                    }
+            except Exception as e:
+                return {'status': 'error', 'error': f'Lỗi khi kiểm tra cấu trúc layout detection: {str(e)}'}
         
             return {'layout_det_res': layout_det_res, 'status': 'success'}
             
